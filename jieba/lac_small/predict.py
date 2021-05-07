@@ -27,14 +27,14 @@ import jieba.lac_small.creator as creator
 import jieba.lac_small.reader_small as reader_small
 import numpy
 
-word_emb_dim=128
-grnn_hidden_dim=128
-bigru_num=2
-use_cuda=False
+word_emb_dim = 128
+grnn_hidden_dim = 128
+bigru_num = 2
+use_cuda = False
 basepath = os.path.abspath(__file__)
 folder = os.path.dirname(basepath)
 init_checkpoint = os.path.join(folder, "model_baseline")
-batch_size=1
+batch_size = 1
 
 dataset = reader_small.Dataset()
 infer_program = fluid.Program()
@@ -48,35 +48,37 @@ exe.run(fluid.default_startup_program())
 utils.init_checkpoint(exe, init_checkpoint, infer_program)
 results = []
 
+
 def get_sent(str1):
-    feed_data=dataset.get_vars(str1)
+    feed_data = dataset.get_vars(str1)
     a = numpy.array(feed_data).astype(numpy.int64)
-    a=a.reshape(-1,1)
+    a = a.reshape(-1, 1)
     c = fluid.create_lod_tensor(a, [[a.shape[0]]], place)
 
     words, crf_decode = exe.run(
-            infer_program,
-            fetch_list=[infer_ret['words'], infer_ret['crf_decode']],
-            feed={"words":c, },
-            return_numpy=False,
-            use_program_cache=True)
-    sents=[]
-    sent,tag = utils.parse_result(words, crf_decode, dataset)
+        infer_program,
+        fetch_list=[infer_ret['words'], infer_ret['crf_decode']],
+        feed={"words": c, },
+        return_numpy=False,
+        use_program_cache=True)
+    sents = []
+    sent, tag = utils.parse_result(words, crf_decode, dataset)
     sents = sents + sent
     return sents
 
+
 def get_result(str1):
-    feed_data=dataset.get_vars(str1)
+    feed_data = dataset.get_vars(str1)
     a = numpy.array(feed_data).astype(numpy.int64)
-    a=a.reshape(-1,1)
+    a = a.reshape(-1, 1)
     c = fluid.create_lod_tensor(a, [[a.shape[0]]], place)
 
     words, crf_decode = exe.run(
-            infer_program,
-            fetch_list=[infer_ret['words'], infer_ret['crf_decode']],
-            feed={"words":c, },
-            return_numpy=False,
-            use_program_cache=True)
-    results=[]
+        infer_program,
+        fetch_list=[infer_ret['words'], infer_ret['crf_decode']],
+        feed={"words": c, },
+        return_numpy=False,
+        use_program_cache=True)
+    results = []
     results += utils.parse_result(words, crf_decode, dataset)
     return results

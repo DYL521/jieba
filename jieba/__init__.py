@@ -1,16 +1,22 @@
+"""
+__future__:  是py2的概念；py3对应的是future; __future__
+
+"""
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '0.42.1'
 __license__ = 'MIT'
 
+# 内部python对象序列化： 支持的对象不如pickle多
 import marshal
 import re
+# 用于创建临时文件夹和文件
 import tempfile
 import threading
 import time
 from hashlib import md5
 from math import log
-
+import pdb
 from . import finalseg
 from ._compat import *
 
@@ -50,6 +56,7 @@ def setLogLevel(log_level):
     default_logger.setLevel(log_level)
 
 
+# 分词器
 class Tokenizer(object):
 
     def __init__(self, dictionary=DEFAULT_DICT):
@@ -91,6 +98,9 @@ class Tokenizer(object):
         return lfreq, ltotal
 
     def initialize(self, dictionary=None):
+        """
+        初始化函数
+        """
         if dictionary:
             abs_path = _get_abs_path(dictionary)
             if self.dictionary == abs_path and self.initialized:
@@ -123,10 +133,11 @@ class Tokenizer(object):
                     abs_path.encode('utf-8', 'replace')).hexdigest()
             cache_file = os.path.join(
                 self.tmp_dir or tempfile.gettempdir(), cache_file)
-            # prevent absolute path in self.cache_file
+            # prevent absolute path in self.cache_file 'C:\\Users\\ADMINI~1\\AppData\\Local\\Temp'
             tmpdir = os.path.dirname(cache_file)
 
             load_from_cache_fail = True
+            # 加载缓存文件，保存到 self.FREQ
             if os.path.isfile(cache_file) and (abs_path == DEFAULT_DICT or
                                                os.path.getmtime(cache_file) > os.path.getmtime(abs_path)):
                 default_logger.debug(
@@ -178,10 +189,15 @@ class Tokenizer(object):
                               logtotal + route[x + 1][0], x) for x in DAG[idx])
 
     def get_DAG(self, sentence):
+        """
+        DAG: 有向无环图DAG
+        """
         self.check_initialized()
+        # {0: [0], 1: [1, 2], 2: [2], 3: [3, 4], 4: [4], 5: [5, 6, 8], 6: [6, 7], 7: [7, 8], 8: [8]}
         DAG = {}
         N = len(sentence)
         for k in xrange(N):
+            print(k)
             tmplist = []
             i = k
             frag = sentence[k]
@@ -296,12 +312,19 @@ class Tokenizer(object):
             - cut_all: Model type. True for full pattern, False for accurate pattern.
             - HMM: Whether to use the Hidden Markov Model.
         """
+        print("分词>>>>>>>>>>>>>>>>>>>>>>>>>")
+        # pdb.set_trace()
+        # 检查paddle 是否安装
         is_paddle_installed = check_paddle_install['is_paddle_installed']
+        # 设置字符串编码
         sentence = strdecode(sentence)
+        # paddle 已安装 and paddle模式开启
         if use_paddle and is_paddle_installed:
             # if sentence is null, it will raise core exception in paddle.
+            # 文本长度检查
             if sentence is None or len(sentence) == 0:
                 return
+            # 加载字典
             import jieba.lac_small.predict as predict
             results = predict.get_sent(sentence)
             for sent in results:
@@ -313,10 +336,11 @@ class Tokenizer(object):
         re_skip = re_skip_default
         if cut_all:
             cut_block = self.__cut_all
-        elif HMM:
+        elif HMM:  # 默认模式
             cut_block = self.__cut_DAG
         else:
             cut_block = self.__cut_DAG_NO_HMM
+        # ['', '小明硕士毕业于中国科学院计算所', '，', '后在日本京都大学深造', '']
         blocks = re_han.split(sentence)
         for blk in blocks:
             if not blk:

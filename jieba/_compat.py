@@ -15,6 +15,8 @@ def setLogLevel(log_level):
 check_paddle_install = {'is_paddle_installed': False}
 
 try:
+    # 简单的插件框架
+    # https://berryfl.wordpress.com/2015/06/07/pkg_resources/
     import pkg_resources
 
     get_module_res = lambda *res: pkg_resources.resource_stream(__name__,
